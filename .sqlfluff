@@ -1,7 +1,9 @@
 [sqlfluff]
-templater = dbt
+templater = "dbt"
 
-dialect = bigquery
+sql_file_exts = ".sql,.sql.j2,.dml,.ddl"
+
+dialect = "snowflake"
 [sqlfluff:rules]
 
 comma_style = leading
@@ -11,3 +13,7 @@ capitalisation_policy = lower
 
 [sqlfluff:rules:L030]
 capitalisation_policy = lower
+
+[sqlfluff.templater.dbt]
+project_dir = "."
+profile = "snowflake"
