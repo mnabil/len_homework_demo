@@ -1,12 +1,10 @@
 [sqlfluff]
-templater = "dbt"
+templater = jinja
 
 sql_file_exts = ".sql,.sql.j2,.dml,.ddl"
 
-dialect = "snowflake"
-[sqlfluff:rules]
+dialect = snowflake
 
-comma_style = leading
 
 [sqlfluff:rules:L010]
 capitalisation_policy = lower
@@ -17,3 +15,7 @@ capitalisation_policy = lower
 [sqlfluff.templater.dbt]
 project_dir = "."
 profile = "snowflake"
+
+[sqlfluff:layout:type:comma]
+spacing_before = touch
+line_position = trailing
