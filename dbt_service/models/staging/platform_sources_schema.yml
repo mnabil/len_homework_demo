@@ -21,11 +21,11 @@ sources:
       - name: USERS
         description: "A source for users"
         columns:
-          - name: USER_ID
+          - name: ID
             data_tests:
               - not_null
               - unique
-          - name: USER_NAME
+          - name: USERNAME
             data_tests:
               - not_null
           - name: EMAIL
