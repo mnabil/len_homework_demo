@@ -1,0 +1,47 @@
+version: 2
+
+sources:
+  - name: platform_data
+    database: STAGING
+    schema: PUBLIC
+    tables:
+      - name: PLATFORM_EVENTS
+        description: "A source platform events"
+        columns:
+          - name: EVENT_TIME
+            data_tests:
+              - not_null
+          - name: EVENT_TYPE
+            data_tests:
+              - not_null
+          - name: ACTIVITY_DETAILS
+            data_tests:
+              - not_null
+
+      - name: USERS
+        description: "A source for users"
+        columns:
+          - name: USER_ID
+            data_tests:
+              - not_null
+              - unique
+          - name: USER_NAME
+            data_tests:
+              - not_null
+          - name: EMAIL
+            data_tests:
+              - not_null
+
+      - name: PRODUCTS
+        description: "A source for products"
+        columns:
+          - name: PRODUCT_ID
+            data_tests:
+              - not_null
+              - unique
+          - name: PRODUCT_NAME
+            data_tests:
+              - not_null
+          - name: PRICE
+            data_tests:
+              - not_null
