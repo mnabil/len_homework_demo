@@ -1,0 +1,28 @@
+repos:
+  - repo: https://github.com/dbt-checkpoint/dbt-checkpoint
+    rev: v1.2.1
+    hooks:
+    - id: dbt-compile
+      args: ["--cmd-flags", "++project-dir", "./","++profiles-dir", "~/.dbt/", "++no-version-check", "--model-prefix", "+", "--", ]
+    - id: check-script-semicolon
+    - id: dbt-docs-generate
+      args: ["--cmd-flags", "++project-dir", "./","++profiles-dir", "~/.dbt/", "++no-version-check", ]
+    - id: check-model-has-meta-keys
+      args: ["--manifest", "target/manifest.json",'--meta-keys', 'title', 'model_maturity', 'contains_pii', 'author', 'domain_name', 'sub_domain',"--"]
+      files: len_homework_demo/
+      exclude : ^(len_homework_demo/macros|len_homework_demo/tests)
+    - id: check-source-has-meta-keys
+      args: ['--meta-keys', 'contains_pii', "--"]
+      files: len_homework_demo/
+    - id: generate-missing-sources
+      args: ["--manifest", "target/manifest.json","--schema-file", "len_homework_demo/models/analytics/schema.yml", "--"]
+   
+  - repo: https://github.com/sqlfluff/sqlfluff
+    rev: 2.3.5
+    hooks:
+      - id: sqlfluff-lint
+        additional_dependencies: ["dbt-snowflake==1.8.0", "sqlfluff-templater-dbt==2.3.5"]
+        types: [sql]
+        exclude: "^target/"
+        args: [--config, ".sqlfluff",
+          --processes, "10"]
