@@ -2,13 +2,13 @@
 Extract login activity from the platform events into a separate table
 for analysis
 **/
-SELECT 
+SELECT
     EVENT_TIME,
     EVENT_TYPE,
-    ACTIVITY_DETAILS:user_id::VARCHAR as user_id,
-    ACTIVITY_DETAILS:ip_address::VARCHAR as ip_address,
-    ACTIVITY_DETAILS:username::VARCHAR as username,
-    ACTIVITY_DETAILS:password::VARCHAR as password,
-    ACTIVITY_DETAILS:user_agent::VARCHAR as user_agent
+    ACTIVITY_DETAILS:user_id::VARCHAR AS USER_ID,
+    ACTIVITY_DETAILS:ip_address::VARCHAR AS IP_ADDRESS,
+    ACTIVITY_DETAILS:username::VARCHAR AS USERNAME,
+    ACTIVITY_DETAILS:password::VARCHAR AS PASSWORD,
+    ACTIVITY_DETAILS:user_agent::VARCHAR AS USER_AGENT
 FROM {{ source('platform_data', 'PLATFORM_EVENTS') }}
-where EVENT_TYPE = 'login'
+WHERE EVENT_TYPE = 'login'
