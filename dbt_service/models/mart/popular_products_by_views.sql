@@ -7,26 +7,30 @@ steps:
 */
 
 WITH product_views AS (
-    SELECT 
-        DATE_TRUNC('month', event_time) AS activity_month,
+    SELECT
         product_id,
+        DATE_TRUNC('month', event_time) AS activity_month,
         COUNT(DISTINCT user_id) AS unique_viewers
-    FROM 
+    FROM
         {{ ref('stg_views_activity') }}
-    GROUP BY 
+    GROUP BY
         DATE_TRUNC('month', event_time),
         product_id
 ),
+
 ranked_products AS (
-    SELECT 
+    SELECT
         activity_month,
         product_id,
         unique_viewers,
-        DENSE_RANK() OVER (PARTITION BY activity_month ORDER BY unique_viewers DESC) AS rank
-    FROM 
+        DENSE_RANK()
+            OVER (PARTITION BY activity_month ORDER BY unique_viewers DESC)
+            AS rank
+    FROM
         product_views
 )
-SELECT 
+
+SELECT
     activity_month,
     MAX(CASE WHEN rank = 1 THEN product_id END) AS top_1_product,
     MAX(CASE WHEN rank = 1 THEN unique_viewers END) AS top_1_view_count,
@@ -34,9 +38,9 @@ SELECT
     MAX(CASE WHEN rank = 2 THEN unique_viewers END) AS top_2_view_count,
     MAX(CASE WHEN rank = 3 THEN product_id END) AS top_3_product,
     MAX(CASE WHEN rank = 3 THEN unique_viewers END) AS top_3_view_count
-FROM 
+FROM
     ranked_products
-GROUP BY 
+GROUP BY
     activity_month
-ORDER BY 
+ORDER BY
     activity_month
