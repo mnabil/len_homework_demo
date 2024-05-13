@@ -7,7 +7,7 @@ A [Prefect](https://docs.prefect.io/) workflow that runs on snowflake using snow
  `prefect server start`
 
 ## Deploy flow
- `python3 anomaly_detection_flow.py`
+ `python3 anomaly_detection_flow.py --table-name "table_name"`
 
 ## Workflow Explanation
     1) Flow takes a table name as a parameter 
