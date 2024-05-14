@@ -4,17 +4,16 @@ from snowflake import connector
 import pandas as pd
 import json
 from prefect.tasks.notifications import SlackTask
-import argparse
 
 # setting up the snowflake connector
 ctx = connector.connect(
-        user="user",
-        password="pass",
-        account="acc",
-        warehouse="wh",
-        database="DBT_DB",
-        schema="DBT_SCHEMA",
-        role="role",
+        user="",
+        password="",
+        account="",
+        warehouse="",
+        database="",
+        schema="",
+        role="",
         protocol='https')
 
 # setting up the slack task
@@ -97,7 +96,7 @@ def use_model_if_exists(table_name: str,
     # but for now, we'll just use the first numeric column
     curr = ctx.cursor()
     # call the snowflake DETECT_ANOMALIES model to detect anomalies on the second half of the data
-    query = '''CALL {table_name}_model!DETECT_ANOMALIES( INPUT_DATA => SYSTEM$QUERY_REFERENCE('SELECT * FROM {table_name} WHERE {timestamp_column} > (SELECT TIMESTAMPADD(SECOND, DATEDIFF(SECOND, MIN({timestamp_column}), MAX({timestamp_column})) / 2,MIN({timestamp_column})) FROM {table_name}) order by {timestamp_column} asc;'), TIMESTAMP_COLNAME =>'{timestamp_column}', TARGET_COLNAME => '{target_column}');'''
+    query = '''CALL {table_name}_model!DETECT_ANOMALIES( INPUT_DATA => SYSTEM$QUERY_REFERENCE('SELECT * FROM dbt_db.dbt_schema.{table_name} WHERE {timestamp_column} > (SELECT TIMESTAMPADD(SECOND, DATEDIFF(SECOND, MIN({timestamp_column}), MAX({timestamp_column})) / 2,MIN({timestamp_column})) FROM dbt_db.dbt_schema.{table_name}) order by {timestamp_column} asc;'), TIMESTAMP_COLNAME =>'{timestamp_column}', TARGET_COLNAME => '{target_column}');'''
     curr = curr.execute(query.format(table_name = table_name, timestamp_column = timestamp_column, target_column = numeric_columns[0]))
     all_rows = curr.fetchall()
     field_names = [i[0] for i in curr.description]
@@ -123,9 +122,14 @@ def train_model_if_not_exists(table_name: str, timestamp_column: str, numeric_co
     """
     curr = ctx.cursor()
     # create a new snowflake cortex model and train
-    query = curr.execute('''CREATE OR REPLACE SNOWFLAKE.ML.ANOMALY_DETECTION {table_name}_model(INPUT_DATA => SYSTEM$QUERY_REFERENCE('SELECT * FROM {table_name} WHERE {timestamp_column} <= (SELECT TIMESTAMPADD(SECOND, DATEDIFF(SECOND, MIN({timestamp_column}), MAX({timestamp_column})) / 2, MIN({timestamp_column})) FROM {table_name}) order by {timestamp_column} asc;'), TIMESTAMP_COLNAME =>'{timestamp_column}', TARGET_COLNAME => '{target_column}');'''.format(table_name = table_name, timestamp_column = timestamp_column, target_column = numeric_columns[0]))
+    # query = curr.execute('''CREATE OR REPLACE SNOWFLAKE.ML.ANOMALY_DETECTION {table_name}_model(INPUT_DATA => SYSTEM$QUERY_REFERENCE('SELECT * FROM {table_name} WHERE {timestamp_column} <= (SELECT TIMESTAMPADD(SECOND, DATEDIFF(SECOND, MIN({timestamp_column}), MAX({timestamp_column})) / 2, MIN({timestamp_column})) FROM {table_name}) order by {timestamp_column} asc;'), TIMESTAMP_COLNAME =>'{timestamp_column}', TARGET_COLNAME => '{target_column}');'''.format(table_name = table_name, timestamp_column = timestamp_column, target_column = numeric_columns[0]))
+    curr.execute('use role ACCOUNTADMIN;')
+    curr.execute('use schema DBT_SCHEMA;')
+    curr.execute('use database DBT_DB;')
+    curr.execute('use warehouse COMPUTE_WH;')
+    query = curr.execute('''CREATE OR REPLACE SNOWFLAKE.ML.ANOMALY_DETECTION {table_name}_model(INPUT_DATA => SYSTEM$QUERY_REFERENCE('SELECT * FROM dbt_db.dbt_schema.{table_name} WHERE {timestamp_column} <= (SELECT TIMESTAMPADD(SECOND, DATEDIFF(SECOND,MIN({timestamp_column}), MAX({timestamp_column})) / 2, MIN({timestamp_column})) FROM dbt_db.dbt_schema.{table_name}) order by {timestamp_column} asc;'),TIMESTAMP_COLNAME =>'{timestamp_column}',TARGET_COLNAME => '{target_column}',LABEL_COLNAME => '');'''.format(table_name = table_name, timestamp_column = timestamp_column, target_column = numeric_columns[0]))
     print(query)
-    curr = curr.execute(query.format(table_name = table_name, timestamp_column = timestamp_column, target_column = numeric_columns[0]))
+    # curr = curr.execute(query.format(table_name = table_name, timestamp_column = timestamp_column, target_column = numeric_columns[0]))
     print("Model Trained Successfully on first half from table {table_name}".format(table_name = table_name))
     return True
 
@@ -136,7 +140,7 @@ def send_slack_alert(anomalies_detected: bool, df=None):
     Send slack alert if anomalies detected
     """
     if anomalies_detected:
-        slack(message="Anomalies detected in the data. Please check the anomalies.csv file for more details")
+        # slack(message="Anomalies detected in the data. Please check the anomalies.csv file for more details")
         return True
     else:
         print("No anomalies detected")
@@ -156,10 +160,6 @@ def main_flow(table_name: str):
         action_4 = send_slack_alert(action_3[0], action_3[1])
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--table-name", type=str, help="Name of the table", required=True)
-    args = parser.parse_args()
     main_flow.serve(name="snowflake--flow",
                       tags=["snowflake"],
-                      parameters=[args],
                       interval=60)
